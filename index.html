@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASCII Art Generator</title>
+    <style>
+        body {
+            font-family: monospace;
+            text-align: center;
+            background-color: #1e1e2f;
+            color: #ffffff;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        p {
+            margin: 10px 0;
+            font-size: 1rem;
+        }
+        input[type="file"] {
+            background: #444;
+            color: white;
+            border: none;
+            padding: 10px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        input[type="range"] {
+            margin: 10px 0;
+            width: 300px;
+        }
+        button {
+            margin: 5px;
+            padding: 10px 15px;
+            font-size: 1rem;
+            background-color: #444;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #555;
+        }
+        #colorPicker {
+            margin-left: 10px;
+            padding: 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        textarea {
+            display: block;
+            margin: 20px auto;
+            width: 80%;
+            height: 300px;
+            background-color: #000;
+            color: #0f0;
+            border: none;
+            resize: none;
+            font-family: monospace;
+            font-size: 2px;
+            overflow: auto;
+            padding: 10px;
+        }
+        .controls {
+            margin: 20px 0;
+            padding: 10px;
+            background: #2b2b3b;
+            border-radius: 10px;
+        }
+        .controls p {
+            margin: 5px 0;
+        }
+        canvas {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>ASCII Art Generator</h1>
+    <p>Upload an image and customize the ASCII art output.</p>
+    <div class="controls">
+        <p><input type="file" id="imageInput" accept="image/*"></p>
+        <p>
+            Adjust Width: <input type="range" id="widthSlider" min="50" max="1000" value="150">
+            <span id="widthValue">150</span>
+        </p>
+        <p>
+            Select Color:
+            <button class="color-button" data-color="#0f0">Green</button>
+            <button class="color-button" data-color="#f00">Red</button>
+            <button class="color-button" data-color="#00f">Blue</button>
+            <button class="color-button" data-color="#fff">White</button>
+            Or Pick a Custom Color: <input type="color" id="colorPicker" value="#0f0">
+        </p>
+        <p>
+            <button id="copyButton">Copy to Clipboard</button>
+        </p>
+    </div>
+    <textarea id="asciiOutput" readonly></textarea>
+    <canvas id="canvas"></canvas>
+
+    <script>
+        const imageInput = document.getElementById('imageInput');
+        const asciiOutput = document.getElementById('asciiOutput');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const widthSlider = document.getElementById('widthSlider');
+        const widthValue = document.getElementById('widthValue');
+        const colorButtons = document.querySelectorAll('.color-button');
+        const colorPicker = document.getElementById('colorPicker');
+        const copyButton = document.getElementById('copyButton');
+
+        const CHARACTERS = "@%#*+=-:. "; //dark to light
+        let asciiWidth = parseInt(widthSlider.value);
+
+        window.addEventListener('load', () => {
+            const storedImage = localStorage.getItem('uploadedImage');
+            const storedColor = localStorage.getItem('selectedColor');
+            const storedWidth = localStorage.getItem('asciiWidth');
+
+            if (storedImage) {
+                const img = new Image();
+                img.src = storedImage;
+                img.onload = () => {
+                    convertToASCII(img);
+                    saveOriginalImage(img);
+                };
+            }
+
+            if (storedColor) {
+                asciiOutput.style.color = storedColor;
+                colorPicker.value = storedColor;
+            }
+
+            if (storedWidth) {
+                asciiWidth = parseInt(storedWidth);
+                widthSlider.value = asciiWidth;
+                widthValue.textContent = asciiWidth;
+            }
+        });
+
+        widthSlider.addEventListener('input', () => {
+            asciiWidth = parseInt(widthSlider.value);
+            widthValue.textContent = asciiWidth;
+            localStorage.setItem('asciiWidth', asciiWidth);
+
+            const storedOriginalImage = localStorage.getItem('uploadedImage');
+            if (storedOriginalImage) {
+                const img = new Image();
+                img.src = storedOriginalImage;
+                img.onload = () => {
+                    convertToASCII(img);
+                };
+            }
+        });
+
+        imageInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    localStorage.setItem('uploadedImage', e.target.result);
+                    const img = new Image();
+                    img.src = e.target.result;
+                    img.onload = () => {
+                        convertToASCII(img);
+                        saveOriginalImage(img);
+                    };
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        colorButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const color = button.getAttribute('data-color');
+                asciiOutput.style.color = color;
+                localStorage.setItem('selectedColor', color);
+            });
+        });
+
+        colorPicker.addEventListener('input', () => {
+            const color = colorPicker.value;
+            asciiOutput.style.color = color;
+            localStorage.setItem('selectedColor', color);
+        });
+
+        copyButton.addEventListener('click', () => {
+            navigator.clipboard.writeText(asciiOutput.value).then(() => {
+                alert('ASCII art copied to clipboard!');
+            }).catch(err => {
+                alert('Failed to copy text: ' + err);
+            });
+        });
+
+        function saveOriginalImage(img) {
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = img.width;
+            tempCanvas.height = img.height;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.drawImage(img, 0, 0);
+            const originalData = tempCanvas.toDataURL('image/png');
+            localStorage.setItem('originalImage', originalData);
+        }
+
+        function convertToASCII(img) {
+            const width = asciiWidth;
+            const scale = img.height / img.width;
+            const height = Math.round(width * scale * 0.55);
+
+            canvas.width = width;
+            canvas.height = height;
+            ctx.drawImage(img, 0, 0, width, height);
+
+            const imageData = ctx.getImageData(0, 0, width, height);
+            const pixels = imageData.data;
+
+            let ascii = "";
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    const i = (y * width + x) * 4;
+                    const r = pixels[i];
+                    const g = pixels[i + 1];
+                    const b = pixels[i + 2];
+                    const brightness = (r + g + b) / 3;
+                    const charIndex = Math.floor((brightness / 255) * (CHARACTERS.length - 1));
+                    ascii += CHARACTERS[charIndex];
+                }
+                ascii += "\n";
+            }
+            
+            asciiOutput.style.width = `${width * 1.25}px`;
+            asciiOutput.style.height = `${height * 2.1}px`;
+            asciiOutput.value = ascii;
+        }
+    </script>
+</body>
+</html>
