@@ -3,108 +3,106 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ASCII Art Generator</title>
+    <title>ASCII Art Generator Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <style>
         body {
-            font-family: monospace;
-            text-align: center;
-            background-color: #1e1e2f;
-            color: #ffffff;
-            margin: 0;
-            padding: 20px;
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            min-height: 100vh;
         }
-        h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
-        p {
-            margin: 10px 0;
-            font-size: 1rem;
+        .control-panel {
+            background: rgba(15, 23, 42, 0.8);
         }
-        input[type="file"] {
-            background: #444;
-            color: white;
-            border: none;
-            padding: 10px;
+        .gradient-text {
+            background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .custom-range::-webkit-slider-thumb {
+            @apply bg-blue-500;
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
             cursor: pointer;
-            border-radius: 5px;
-        }
-        input[type="range"] {
-            margin: 10px 0;
-            width: 300px;
-        }
-        button {
-            margin: 5px;
-            padding: 10px 15px;
-            font-size: 1rem;
-            background-color: #444;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #555;
-        }
-        #colorPicker {
-            margin-left: 10px;
-            padding: 5px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        textarea {
-            display: block;
-            margin: 20px auto;
-            width: 80%;
-            height: 300px;
-            background-color: #000;
-            color: #0f0;
-            border: none;
-            resize: none;
-            font-family: monospace;
-            font-size: 2px;
-            overflow: auto;
-            padding: 10px;
-        }
-        .controls {
-            margin: 20px 0;
-            padding: 10px;
-            background: #2b2b3b;
-            border-radius: 10px;
-        }
-        .controls p {
-            margin: 5px 0;
-        }
-        canvas {
-            display: none;
         }
     </style>
 </head>
-<body>
-    <h1>ASCII Art Generator</h1>
-    <p>Upload an image and customize the ASCII art output.</p>
-    <div class="controls">
-        <p><input type="file" id="imageInput" accept="image/*"></p>
-        <p>
-            Adjust Width: <input type="range" id="widthSlider" min="50" max="1000" value="150">
-            <span id="widthValue">150</span>
-        </p>
-        <p>
-            Select Color:
-            <button class="color-button" data-color="#0f0">Green</button>
-            <button class="color-button" data-color="#f00">Red</button>
-            <button class="color-button" data-color="#00f">Blue</button>
-            <button class="color-button" data-color="#fff">White</button>
-            Or Pick a Custom Color: <input type="color" id="colorPicker" value="#0f0">
-        </p>
-        <p>
-            <button id="copyButton">Copy to Clipboard</button>
-        </p>
-    </div>
-    <textarea id="asciiOutput" readonly></textarea>
-    <canvas id="canvas"></canvas>
+<body class="text-gray-100">
+    <div class="container mx-auto p-4 md:p-8">
+        <header class="text-center mb-12">
+            <h1 class="text-4xl md:text-6xl font-bold gradient-text mb-4">ASCII Art Generator</h1>
+            <p class="text-lg text-gray-400">Transform your images into stunning ASCII masterpieces</p>
+        </header>
 
+        <div class="grid md:grid-cols-2 gap-8">
+            <div class="glass-effect rounded-2xl p-6 md:p-8 space-y-6">
+                <div class="relative">
+                    <label class="block text-lg font-medium mb-3 text-blue-400">Upload Image</label>
+                    <div class="relative border-2 border-dashed border-blue-500/30 rounded-xl p-8 text-center hover:border-blue-500 transition-colors">
+                        <input type="file" id="imageInput" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                        <div class="text-gray-400">
+                            <svg class="mx-auto h-12 w-12 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                            </svg>
+                            <p class="text-lg font-medium">Drag and drop your image here</p>
+                            <p class="text-sm">or click to browse</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-6">
+                    <div>
+                        <label for="widthSlider" class="block text-lg font-medium mb-3 text-blue-400">Output Width</label>
+                        <input type="range" id="widthSlider" min="50" max="1000" value="150" 
+                               class="custom-range w-full h-2 bg-blue-900/50 rounded-lg appearance-none">
+                        <div class="flex justify-between mt-2">
+                            <span class="text-sm text-gray-400">50px</span>
+                            <span id="widthValue" class="text-sm font-medium">150px</span>
+                            <span class="text-sm text-gray-400">1000px</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-lg font-medium mb-3 text-blue-400">Color Theme</label>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            <button class="color-button bg-gradient-to-r from-green-500 to-green-600 py-2 px-4 rounded-lg font-medium hover:opacity-90 transition-opacity" data-color="#10b981">Green</button>
+                            <button class="color-button bg-gradient-to-r from-blue-500 to-blue-600 py-2 px-4 rounded-lg font-medium hover:opacity-90 transition-opacity" data-color="#3b82f6">Blue</button>
+                            <button class="color-button bg-gradient-to-r from-purple-500 to-purple-600 py-2 px-4 rounded-lg font-medium hover:opacity-90 transition-opacity" data-color="#8b5cf6">Purple</button>
+                            <div class="relative">
+                                <input type="color" id="colorPicker" value="#10b981" 
+                                       class="w-full h-full absolute opacity-0 cursor-pointer">
+                                <div class="bg-gray-700 py-2 px-4 rounded-lg font-medium text-center">Custom</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-effect rounded-2xl p-6 md:p-8 space-y-4">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold text-blue-400">Output</h2>
+                    <button id="copyButton" class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg flex items-center space-x-2 transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/>
+                        </svg>
+                        <span>Copy</span>
+                    </button>
+                </div>
+                <textarea id="asciiOutput" readonly 
+                          class="w-full h-[400px] bg-gray-900/50 rounded-lg p-4 font-mono text-green-500 focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+            </div>
+        </div>
+    </div>
+    <canvas id="canvas" class="hidden"></canvas>
     <script>
         const imageInput = document.getElementById('imageInput');
         const asciiOutput = document.getElementById('asciiOutput');
@@ -234,7 +232,7 @@
                 }
                 ascii += "\n";
             }
-            
+
             asciiOutput.style.width = `${width * 1.25}px`;
             asciiOutput.style.height = `${height * 2.1}px`;
             asciiOutput.value = ascii;
