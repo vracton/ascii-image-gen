@@ -7,19 +7,48 @@
     <style>
         body {
             font-family: monospace;
-            text-align: center;
             background-color: #1e1e2f;
             color: #ffffff;
             margin: 0;
             padding: 20px;
+            display: flex;
+            height: calc(100vh - 40px);
+            overflow: hidden;
+            animation: fadeIn 1s ease-in-out;
+        }
+        .container {
+            display: flex;
+            width: 100%;
+        }
+        .panel {
+            padding: 20px;
+            background: #2b2b3b;
+            border-radius: 10px;
+            margin: 10px;
+            opacity: 0;
+            animation: fadeIn 1s ease-in-out forwards;
+        }
+        .left-panel {
+            flex: 1;
+            max-width: 300px;
+        }
+        .right-panel {
+            flex: 3;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #000;
+            transition: background-color 0.3s;
         }
         h1 {
             font-size: 2.5rem;
             margin-bottom: 10px;
+            text-align: center;
         }
         p {
             margin: 10px 0;
             font-size: 1rem;
+            text-align: center;
         }
         input[type="file"] {
             background: #444;
@@ -28,10 +57,14 @@
             padding: 10px;
             cursor: pointer;
             border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        input[type="file"]:hover {
+            background-color: #555;
         }
         input[type="range"] {
             margin: 10px 0;
-            width: 300px;
+            width: 100%;
         }
         button {
             margin: 5px;
@@ -42,22 +75,23 @@
             border: none;
             border-radius: 5px;
             cursor: pointer;
+            transition: background-color 0.3s, transform 0.3s;
         }
         button:hover {
             background-color: #555;
+            transform: scale(1.05);
         }
-        #colorPicker {
+        #colorPicker, #bgColorPicker {
             margin-left: 10px;
             padding: 5px;
             border: none;
             border-radius: 5px;
             cursor: pointer;
+            transition: background-color 0.3s;
         }
         textarea {
-            display: block;
-            margin: 20px auto;
-            width: 80%;
-            height: 300px;
+            width: 100%;
+            height: 100%;
             background-color: #000;
             color: #0f0;
             border: none;
@@ -66,43 +100,59 @@
             font-size: 2px;
             overflow: auto;
             padding: 10px;
-        }
-        .controls {
-            margin: 20px 0;
-            padding: 10px;
-            background: #2b2b3b;
-            border-radius: 10px;
-        }
-        .controls p {
-            margin: 5px 0;
+            margin-right: -29px;
+            transition: background-color 0.3s, color 0.3s;
         }
         canvas {
             display: none;
         }
-    </style>
+        ::-webkit-scrollbar {
+            display: none;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+    </style>    
 </head>
 <body>
-    <h1>ASCII Art Generator</h1>
-    <p>Upload an image and customize the ASCII art output.</p>
-    <div class="controls">
-        <p><input type="file" id="imageInput" accept="image/*"></p>
-        <p>
-            Adjust Width: <input type="range" id="widthSlider" min="50" max="1000" value="150">
-            <span id="widthValue">150</span>
-        </p>
-        <p>
-            Select Color:
-            <button class="color-button" data-color="#0f0">Green</button>
-            <button class="color-button" data-color="#f00">Red</button>
-            <button class="color-button" data-color="#00f">Blue</button>
-            <button class="color-button" data-color="#fff">White</button>
-            Or Pick a Custom Color: <input type="color" id="colorPicker" value="#0f0">
-        </p>
-        <p>
-            <button id="copyButton">Copy to Clipboard</button>
-        </p>
+    <div class="container">
+        <div class="panel left-panel">
+            <h1>ASCII Art Generator</h1>
+            <p>Upload an image and customize the ASCII art output.</p>
+            <div class="controls">
+                <p><input type="file" id="imageInput" accept="image/*"></p>
+                <p>
+                    Adjust Width: <input type="range" id="widthSlider" min="50" max="1000" value="150">
+                    <span id="widthValue">150</span>
+                </p>
+                <p>
+                    Select Color:
+                    <button class="color-button" data-color="#0f0" style="background-color: rgb(110, 255, 110);">Green</button>
+                    <button class="color-button" data-color="#f00" style="background-color: rgb(255, 79, 79);">Red</button>
+                    <button class="color-button" data-color="#00f" style="background-color: rgb(79, 79, 255);">Blue</button>
+                    <button class="color-button" data-color="#fff" style="background-color: #fff; color: #000;">White</button>
+                    Or Pick a Custom Color: <input type="color" id="colorPicker" value="#0f0">
+                </p>
+                <p>
+                    Select Background Color: <input type="color" id="bgColorPicker" value="#000">
+                </p>
+                <p>
+                    <input type="checkbox" id="invertCheckbox"> Invert ASCII Characters
+                </p>
+                <p>
+                    <button id="copyButton">Download</button>
+                </p>
+            </div>
+        </div>
+        <div class="panel right-panel" style="display: flex; justify-content: center; align-items: center;">
+            <textarea id="asciiOutput" style="overflow:hidden;" readonly></textarea>
+        </div>
     </div>
-    <textarea id="asciiOutput" readonly></textarea>
     <canvas id="canvas"></canvas>
 
     <script>
@@ -114,7 +164,9 @@
         const widthValue = document.getElementById('widthValue');
         const colorButtons = document.querySelectorAll('.color-button');
         const colorPicker = document.getElementById('colorPicker');
+        const bgColorPicker = document.getElementById('bgColorPicker');
         const copyButton = document.getElementById('copyButton');
+        const invertCheckbox = document.getElementById('invertCheckbox');
 
         const CHARACTERS = "@%#*+=-:. "; //dark to light
         let asciiWidth = parseInt(widthSlider.value);
@@ -122,7 +174,9 @@
         window.addEventListener('load', () => {
             const storedImage = localStorage.getItem('uploadedImage');
             const storedColor = localStorage.getItem('selectedColor');
+            const storedBgColor = localStorage.getItem('selectedBgColor');
             const storedWidth = localStorage.getItem('asciiWidth');
+            const storedInvert = localStorage.getItem('invertASCII');
 
             if (storedImage) {
                 const img = new Image();
@@ -138,10 +192,20 @@
                 colorPicker.value = storedColor;
             }
 
+            if (storedBgColor) {
+                asciiOutput.style.backgroundColor = storedBgColor;
+                document.querySelector(".right-panel").style.backgroundColor = storedBgColor;
+                bgColorPicker.value = storedBgColor;
+            }
+
             if (storedWidth) {
                 asciiWidth = parseInt(storedWidth);
                 widthSlider.value = asciiWidth;
                 widthValue.textContent = asciiWidth;
+            }
+
+            if (storedInvert) {
+                invertCheckbox.checked = storedInvert === 'true';
             }
         });
 
@@ -191,11 +255,49 @@
             localStorage.setItem('selectedColor', color);
         });
 
+        bgColorPicker.addEventListener('input', () => {
+            const bgColor = bgColorPicker.value;
+            asciiOutput.style.backgroundColor = bgColor;
+            document.querySelector(".right-panel").style.backgroundColor = bgColor;
+            localStorage.setItem('selectedBgColor', bgColor);
+        });
+
+        invertCheckbox.addEventListener('change', () => {
+            localStorage.setItem('invertASCII', invertCheckbox.checked);
+            const storedOriginalImage = localStorage.getItem('uploadedImage');
+            if (storedOriginalImage) {
+                const img = new Image();
+                img.src = storedOriginalImage;
+                img.onload = () => {
+                    convertToASCII(img);
+                };
+            }
+        });
+
         copyButton.addEventListener('click', () => {
-            navigator.clipboard.writeText(asciiOutput.value).then(() => {
-                alert('ASCII art copied to clipboard!');
-            }).catch(err => {
-                alert('Failed to copy text: ' + err);
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
+            const width = asciiOutput.clientWidth;
+            const height = asciiOutput.clientHeight;
+
+            tempCanvas.width = 10*(width-58);
+            tempCanvas.height = 10*(height-32);
+
+            tempCtx.fillStyle = asciiOutput.style.backgroundColor || '#000';
+            tempCtx.fillRect(0, 0, 10*(width-58), 10*(height-32));
+
+            tempCtx.font = `20px monospace`;
+            tempCtx.fillStyle = asciiOutput.style.color || '#0f0';
+            const lines = asciiOutput.value.split('\n');
+            lines.forEach((line, index) => {
+                tempCtx.fillText(line, 0, (index + 1) * 20);
+            });
+
+            tempCanvas.toBlob(blob => {
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = 'ascii-art.png';
+                link.click();
             });
         });
 
@@ -222,6 +324,7 @@
             const pixels = imageData.data;
 
             let ascii = "";
+            const invert = invertCheckbox.checked;
             for (let y = 0; y < height; y++) {
                 for (let x = 0; x < width; x++) {
                     const i = (y * width + x) * 4;
@@ -230,7 +333,7 @@
                     const b = pixels[i + 2];
                     const brightness = (r + g + b) / 3;
                     const charIndex = Math.floor((brightness / 255) * (CHARACTERS.length - 1));
-                    ascii += CHARACTERS[charIndex];
+                    ascii += invert ? CHARACTERS[charIndex] : CHARACTERS[CHARACTERS.length - 1 - charIndex];
                 }
                 ascii += "\n";
             }
